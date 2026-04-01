@@ -1,0 +1,53 @@
+name: Build Tauri EXE
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+      - name: Install Dependencies
+        run: npm install
+      - name: Build Web App
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: npm run build
+      - name: Initialize Tauri
+        run: npx -y @tauri-apps/cli@1 init --ci --app-name aura-player --window-title "Aura Player" --dist-dir ../dist --dev-path http://localhost:3000
+      - name: Configure Tauri Permissions
+        run: |
+          cd src-tauri
+          node -e "
+            const fs = require('fs');
+            const config = JSON.parse(fs.readFileSync('tauri.conf.json'));
+            config.tauri.allowlist = config.tauri.allowlist || {};
+            config.tauri.allowlist.shell = {
+              all: false,
+              execute: true,
+              scope: [
+                { name: 'yt-dlp', cmd: 'yt-dlp', args: true },
+                { name: 'python', cmd: 'python', args: true },
+                { name: 'python3', cmd: 'python3', args: true }
+              ]
+            };
+            config.tauri.allowlist.fs = { all: true, scope: ['**'] };
+            config.tauri.allowlist.path = { all: true };
+            fs.writeFileSync('tauri.conf.json', JSON.stringify(config, null, 2));
+          "
+      - name: Build Tauri App
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v0.1.0
+          releaseName: 'Aura Player v0.1.0'
+          releaseBody: 'Automated build of Aura Player'
+          releaseDraft: false
+          prerelease: false
