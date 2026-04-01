@@ -9,12 +9,14 @@ jobs:
     permissions:
       contents: write
     runs-on: windows-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
       - name: Install Dependencies
@@ -60,3 +62,11 @@ jobs:
           releaseBody: 'Automated build of Aura Player'
           releaseDraft: false
           prerelease: false
+          
+      - name: Upload EXE Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Aura-Player-Windows
+          path: |
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/msi/*.msi
