@@ -1,5 +1,7 @@
 name: Build Tauri EXE
 on:
+  push:
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
@@ -21,12 +23,17 @@ jobs:
         run: npm run build
       - name: Initialize Tauri
         run: npx -y @tauri-apps/cli@1 init --ci --app-name aura-player --window-title "Aura Player" --dist-dir ../dist --dev-path http://localhost:3000
-      - name: Configure Tauri Permissions
+      - name: Configure Tauri Permissions and Bundle ID
         run: |
           cd src-tauri
           node -e "
             const fs = require('fs');
             const config = JSON.parse(fs.readFileSync('tauri.conf.json'));
+            
+            // Fix bundle identifier
+            config.tauri.bundle = config.tauri.bundle || {};
+            config.tauri.bundle.identifier = 'com.auraplayer.app';
+            
             config.tauri.allowlist = config.tauri.allowlist || {};
             config.tauri.allowlist.shell = {
               all: false,
@@ -46,8 +53,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: v0.1.0
-          releaseName: 'Aura Player v0.1.0'
+          tagName: v0.1.${{ github.run_number }}
+          releaseName: 'Aura Player v0.1.${{ github.run_number }}'
           releaseBody: 'Automated build of Aura Player'
           releaseDraft: false
           prerelease: false
