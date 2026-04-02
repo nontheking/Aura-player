@@ -50,6 +50,7 @@ jobs:
             };
             config.tauri.allowlist.fs = { all: true, scope: ['**'] };
             config.tauri.allowlist.path = { all: true };
+            config.tauri.allowlist.dialog = { all: true };
             fs.writeFileSync('tauri.conf.json', JSON.stringify(config, null, 2));
           "
       - name: Build Tauri App

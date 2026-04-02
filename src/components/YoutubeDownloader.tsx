@@ -42,8 +42,9 @@ export function YoutubeDownloader({ isOpen, onClose }: YoutubeDownloaderProps) {
         const title = info.title || 'YouTube Audio';
         const ext = info.ext || 'webm';
         
-        // 2. Download to Downloads dir
-        const dlDir = await downloadDir();
+        // 2. Download to specified dir or Downloads dir
+        const customDir = localStorage.getItem('DOWNLOAD_DIR');
+        const dlDir = customDir ? customDir : await downloadDir();
         const filename = `${title.replace(/[/\\?%*:|"<>]/g, '-')}.${ext}`;
         const outPath = await join(dlDir, filename);
         
