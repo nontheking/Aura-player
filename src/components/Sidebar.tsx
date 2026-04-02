@@ -29,9 +29,7 @@ export function Sidebar({ viewMode, setViewMode, playlists, authors, onCreatePla
   return (
     <div className="w-full h-full glass-panel border-r border-white/10 flex flex-col overflow-hidden z-20 bg-black/20">
       <div className="p-6 flex items-center gap-3 border-b border-white/10">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-sky-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
-          <div className="w-3 h-3 bg-white rounded-full" />
-        </div>
+        <img src="/icon.svg" alt="Aura" className="w-8 h-8" />
         <h1 className="text-lg font-semibold tracking-wide">Aura</h1>
       </div>
 
