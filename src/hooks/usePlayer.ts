@@ -263,12 +263,12 @@ export function usePlayer() {
       // Run AI identification in background
       newFiles.forEach(async (file) => {
         try {
-          const { title, author } = await identifyMedia(file.name);
+          const { title, author, album, genre } = await identifyMedia(file.name);
           setLibrary(prev => prev.map(f => 
-            f.id === file.id ? { ...f, title, author, isIdentifying: false } : f
+            f.id === file.id ? { ...f, title, author, album, genre, isIdentifying: false } : f
           ));
           setQueue(prev => prev.map(f => 
-            f.id === file.id ? { ...f, title, author, isIdentifying: false } : f
+            f.id === file.id ? { ...f, title, author, album, genre, isIdentifying: false } : f
           ));
         } catch (e) {
           setLibrary(prev => prev.map(f => f.id === file.id ? { ...f, isIdentifying: false } : f));

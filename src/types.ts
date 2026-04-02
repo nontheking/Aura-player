@@ -7,6 +7,8 @@ export interface MediaFile {
   duration?: number;
   author?: string;
   title?: string;
+  album?: string;
+  genre?: string;
   isIdentifying?: boolean;
 }
 

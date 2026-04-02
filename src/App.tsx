@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Upload, Settings, Youtube, FolderPlus, PanelLeft } from 'lucide-react';
+import { Upload, Settings, Youtube, FolderPlus, PanelLeft, Info } from 'lucide-react';
 import { usePlayer } from './hooks/usePlayer';
 import { PlayerControls } from './components/PlayerControls';
 import { TrackList } from './components/TrackList';
@@ -9,6 +9,7 @@ import { SettingsModal } from './components/SettingsModal';
 import { YoutubeDownloader } from './components/YoutubeDownloader';
 import { PlaylistEditorModal } from './components/PlaylistEditorModal';
 import { SoundEnhancerModal } from './components/SoundEnhancerModal';
+import { MediaInfoPanel } from './components/MediaInfoPanel';
 import { useAudioEffects } from './hooks/useAudioEffects';
 import { RepeatMode, Playlist } from './types';
 import { SlidersHorizontal } from 'lucide-react';
@@ -21,6 +22,7 @@ export default function App() {
   const [isEnhancerOpen, setIsEnhancerOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isVisualizerOpen, setIsVisualizerOpen] = useState(true);
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [editingPlaylist, setEditingPlaylist] = useState<{ id: string | null, name: string, fileIds: string[] } | null>(null);
   
   const {
@@ -215,6 +217,17 @@ export default function App() {
               Visualizer
             </button>
             <button
+              onClick={() => setIsInfoOpen(!isInfoOpen)}
+              className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors border ${
+                isInfoOpen 
+                  ? 'bg-white/10 hover:bg-white/20 border-white/10 text-white' 
+                  : 'bg-white/5 hover:bg-white/10 border-white/5 text-white/60'
+              }`}
+              title="Media Info"
+            >
+              <Info size={18} />
+            </button>
+            <button
               onClick={() => setIsEnhancerOpen(true)}
               className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 transition-colors border border-white/10"
               title="Sound Enhancer"
@@ -340,6 +353,14 @@ export default function App() {
           createOrUpdatePlaylist(editingPlaylist?.id || null, name, fileIds);
         }}
       />
+
+      <div className={`transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 ${isInfoOpen ? 'w-80' : 'w-0'}`}>
+        <MediaInfoPanel 
+          isOpen={isInfoOpen} 
+          onClose={() => setIsInfoOpen(false)} 
+          currentMedia={currentMedia} 
+        />
+      </div>
     </div>
   );
 }

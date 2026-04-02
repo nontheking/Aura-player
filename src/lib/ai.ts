@@ -1,6 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-export async function identifyMedia(filename: string): Promise<{ title: string; author: string }> {
+export async function identifyMedia(filename: string): Promise<{ title: string; author: string; album?: string; genre?: string }> {
   try {
     const apiKey = localStorage.getItem('GEMINI_API_KEY') || process.env.GEMINI_API_KEY;
     
@@ -13,14 +13,16 @@ export async function identifyMedia(filename: string): Promise<{ title: string; 
 
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: `Analyze this media filename and extract the likely song title and author/artist. If it's not a song or you can't tell, just return the cleaned up filename as title and 'Unknown' as author. Filename: "${filename}"`,
+      contents: `Analyze this media filename and extract the likely song title, author/artist, album, and genre. If it's not a song or you can't tell, just return the cleaned up filename as title and 'Unknown' as author. Filename: "${filename}"`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
           properties: {
             title: { type: Type.STRING, description: "The title of the song or media" },
-            author: { type: Type.STRING, description: "The author or artist" }
+            author: { type: Type.STRING, description: "The author or artist" },
+            album: { type: Type.STRING, description: "The album name, if identifiable" },
+            genre: { type: Type.STRING, description: "The genre, if identifiable" }
           },
           required: ["title", "author"]
         }
