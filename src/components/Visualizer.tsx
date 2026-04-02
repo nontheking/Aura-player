@@ -1,51 +1,24 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { MediaFile } from '../types';
 
 interface VisualizerProps {
   mediaRef: React.RefObject<HTMLMediaElement | null>;
   currentMedia: MediaFile | null;
   isPlaying: boolean;
+  analyser: AnalyserNode | null;
 }
 
-export function Visualizer({ mediaRef, currentMedia, isPlaying }: VisualizerProps) {
+export function Visualizer({ mediaRef, currentMedia, isPlaying, analyser }: VisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const audioCtxRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
-  const [isAudioContextInitialized, setIsAudioContextInitialized] = useState(false);
-
-  // Initialize AudioContext on user interaction (play)
-  useEffect(() => {
-    if (isPlaying && !isAudioContextInitialized && mediaRef.current) {
-      try {
-        const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-        audioCtxRef.current = new AudioContext();
-        analyserRef.current = audioCtxRef.current.createAnalyser();
-        analyserRef.current.fftSize = 256;
-
-        // Create source from media element
-        sourceRef.current = audioCtxRef.current.createMediaElementSource(mediaRef.current);
-        
-        // Connect nodes
-        sourceRef.current.connect(analyserRef.current);
-        analyserRef.current.connect(audioCtxRef.current.destination);
-        
-        setIsAudioContextInitialized(true);
-      } catch (e) {
-        console.error("AudioContext initialization failed:", e);
-      }
-    }
-  }, [isPlaying, isAudioContextInitialized, mediaRef]);
 
   // Handle visualizer drawing
   useEffect(() => {
-    if (!isAudioContextInitialized || !analyserRef.current || !canvasRef.current || !isPlaying) return;
+    if (!analyser || !canvasRef.current || !isPlaying) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const analyser = analyserRef.current;
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
@@ -72,12 +45,12 @@ export function Visualizer({ mediaRef, currentMedia, isPlaying }: VisualizerProp
 
         ctx.fillStyle = gradient;
         
-        // Draw centered bars
-        const y = canvas.height - barHeight;
-        
         // Add glow
         ctx.shadowBlur = 15;
         ctx.shadowColor = 'rgba(139, 92, 246, 0.5)';
+        
+        // Draw centered bars
+        const y = canvas.height - barHeight;
         
         // Draw rounded rect
         ctx.beginPath();
@@ -93,7 +66,7 @@ export function Visualizer({ mediaRef, currentMedia, isPlaying }: VisualizerProp
     return () => {
       cancelAnimationFrame(animationId);
     };
-  }, [isAudioContextInitialized, isPlaying]);
+  }, [analyser, isPlaying]);
 
   // Handle canvas resize
   useEffect(() => {

@@ -27,7 +27,7 @@ export function Sidebar({ viewMode, setViewMode, playlists, authors, onCreatePla
   const isLibrary = viewMode === 'library';
 
   return (
-    <div className="w-64 h-full glass-panel border-r border-white/10 flex flex-col overflow-hidden z-20 bg-black/20">
+    <div className="w-full h-full glass-panel border-r border-white/10 flex flex-col overflow-hidden z-20 bg-black/20">
       <div className="p-6 flex items-center gap-3 border-b border-white/10">
         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-sky-500 flex items-center justify-center shadow-lg shadow-violet-500/20">
           <div className="w-3 h-3 bg-white rounded-full" />
@@ -55,26 +55,12 @@ export function Sidebar({ viewMode, setViewMode, playlists, authors, onCreatePla
           <div className="flex items-center justify-between px-3 mb-2">
             <h3 className="text-xs font-semibold text-white/40 uppercase tracking-wider">Playlists</h3>
             <button 
-              onClick={() => setIsCreating(true)}
+              onClick={() => onCreatePlaylist('')} // We'll intercept this in App.tsx to open modal
               className="text-white/40 hover:text-white transition-colors"
             >
               <Plus size={14} />
             </button>
           </div>
-          
-          {isCreating && (
-            <form onSubmit={handleCreate} className="px-3 mb-2">
-              <input
-                autoFocus
-                type="text"
-                value={newPlaylistName}
-                onChange={(e) => setNewPlaylistName(e.target.value)}
-                onBlur={() => setIsCreating(false)}
-                placeholder="Playlist name..."
-                className="w-full bg-black/40 border border-white/10 rounded px-2 py-1 text-sm text-white outline-none focus:border-[var(--color-accent)]"
-              />
-            </form>
-          )}
 
           <div className="space-y-1">
             {playlists.map(p => {

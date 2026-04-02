@@ -1,5 +1,5 @@
-import React from 'react';
-import { Music, Video, Trash2, Play, Plus, Loader2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { Music, Video, Trash2, Play, Plus, Loader2, CheckSquare, Square } from 'lucide-react';
 import { MediaFile, Playlist } from '../types';
 import { cn } from '../lib/utils';
 
@@ -13,6 +13,37 @@ interface TrackListProps {
 }
 
 export function TrackList({ files, currentMedia, playlists, onPlay, onRemove, onAddToPlaylist }: TrackListProps) {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelection = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedIds(newSelected);
+  };
+
+  const selectAll = () => {
+    if (selectedIds.size === files.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(files.map(f => f.id)));
+    }
+  };
+
+  const handleBulkRemove = () => {
+    selectedIds.forEach(id => onRemove(id));
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkAddToPlaylist = (playlistId: string) => {
+    selectedIds.forEach(id => onAddToPlaylist(playlistId, id));
+    setSelectedIds(new Set());
+  };
+
   if (files.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center text-white/40 p-8 text-center border border-dashed border-white/10 rounded-2xl m-4">
@@ -24,23 +55,82 @@ export function TrackList({ files, currentMedia, playlists, onPlay, onRemove, on
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden m-4 glass-panel rounded-2xl">
+    <div className="flex-1 flex flex-col overflow-hidden m-4 glass-panel rounded-2xl relative">
       <div className="flex items-center justify-between p-4 border-b border-white/10">
-        <h2 className="font-semibold text-lg">Tracks ({files.length})</h2>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={selectAll}
+            className="text-white/50 hover:text-white transition-colors flex items-center gap-2"
+          >
+            {selectedIds.size === files.length && files.length > 0 ? (
+              <CheckSquare size={18} className="text-[var(--color-accent)]" />
+            ) : (
+              <Square size={18} />
+            )}
+            <span className="font-semibold text-lg">Tracks ({files.length})</span>
+          </button>
+        </div>
+        
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-2">
+            <span className="text-sm text-white/60 mr-2">{selectedIds.size} selected</span>
+            
+            {playlists.length > 0 && (
+              <div className="relative group/bulkmenu">
+                <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/80 transition-colors text-sm">
+                  <Plus size={14} />
+                  <span>Add to Playlist</span>
+                </button>
+                <div className="absolute right-0 top-full mt-1 hidden group-hover/bulkmenu:block bg-[#1a1a24] border border-white/10 rounded-lg shadow-xl z-50 min-w-[150px] overflow-hidden">
+                  {playlists.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => handleBulkAddToPlaylist(p.id)}
+                      className="w-full text-left px-4 py-2 text-sm text-white/70 hover:text-white hover:bg-white/10 transition-colors truncate"
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <button
+              onClick={handleBulkRemove}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition-colors text-sm"
+            >
+              <Trash2 size={14} />
+              <span>Remove</span>
+            </button>
+          </div>
+        )}
       </div>
       
       <div className="flex-1 overflow-y-auto p-2">
         {files.map((file) => {
           const isActive = currentMedia?.id === file.id;
+          const isSelected = selectedIds.has(file.id);
           return (
             <div
               key={file.id}
               className={cn(
                 "group flex items-center gap-3 p-3 rounded-xl transition-all cursor-pointer",
-                isActive ? "bg-white/10 text-white" : "hover:bg-white/5 text-white/70"
+                isActive ? "bg-white/10 text-white" : "hover:bg-white/5 text-white/70",
+                isSelected && !isActive && "bg-white/5"
               )}
               onClick={() => onPlay(file.id)}
             >
+              <button 
+                onClick={(e) => toggleSelection(e, file.id)}
+                className="text-white/30 hover:text-white transition-colors p-1"
+              >
+                {isSelected ? (
+                  <CheckSquare size={18} className="text-[var(--color-accent)]" />
+                ) : (
+                  <Square size={18} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                )}
+              </button>
+
               <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/5 flex-shrink-0">
                 {isActive ? (
                   <Play size={14} className="fill-current text-[var(--color-accent)]" />

@@ -219,55 +219,64 @@ export function usePlayer() {
   const addFiles = useCallback((files: FileList | File[]) => {
     const validExtensions = ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac', '.mp4', '.webm', '.mkv'];
     
-    const newFiles: MediaFile[] = Array.from(files)
-      .filter(f => {
-        if (f.type.startsWith('audio/') || f.type.startsWith('video/')) return true;
-        const ext = f.name.toLowerCase().substring(f.name.lastIndexOf('.'));
-        return validExtensions.includes(ext);
-      })
-      .map(file => {
-        const isVideo = file.type.startsWith('video/') || ['.mp4', '.webm', '.mkv'].some(ext => file.name.toLowerCase().endsWith(ext));
-        return {
-          id: Math.random().toString(36).substring(2, 9),
-          name: file.name,
-          url: URL.createObjectURL(file),
-          type: isVideo ? 'video' : 'audio',
-          file,
-          title: file.name.replace(/\.[^/.]+$/, ""),
-          author: "Unknown",
-          isIdentifying: true
-        };
+    setLibrary(currentLibrary => {
+      const newFiles: MediaFile[] = Array.from(files)
+        .filter(f => {
+          if (f.type.startsWith('audio/') || f.type.startsWith('video/')) return true;
+          const ext = f.name.toLowerCase().substring(f.name.lastIndexOf('.'));
+          return validExtensions.includes(ext);
+        })
+        .filter(f => {
+          // Prevent redundancy: check if a file with the same name and size already exists
+          const isDuplicate = currentLibrary.some(existingFile => 
+            existingFile.file && existingFile.file.name === f.name && existingFile.file.size === f.size
+          );
+          return !isDuplicate;
+        })
+        .map(file => {
+          const isVideo = file.type.startsWith('video/') || ['.mp4', '.webm', '.mkv'].some(ext => file.name.toLowerCase().endsWith(ext));
+          return {
+            id: Math.random().toString(36).substring(2, 9),
+            name: file.name,
+            url: URL.createObjectURL(file),
+            type: isVideo ? 'video' : 'audio',
+            file,
+            title: file.name.replace(/\.[^/.]+$/, ""),
+            author: "Unknown",
+            isIdentifying: true
+          };
+        });
+
+      if (newFiles.length === 0) return currentLibrary;
+
+      setQueue(prev => {
+        if (prev.length === 0) {
+          setTimeout(() => {
+            setCurrentIndex(0);
+            setIsPlaying(true);
+          }, 0);
+          return newFiles;
+        }
+        return prev;
       });
 
-    if (newFiles.length === 0) return;
+      // Run AI identification in background
+      newFiles.forEach(async (file) => {
+        try {
+          const { title, author } = await identifyMedia(file.name);
+          setLibrary(prev => prev.map(f => 
+            f.id === file.id ? { ...f, title, author, isIdentifying: false } : f
+          ));
+          setQueue(prev => prev.map(f => 
+            f.id === file.id ? { ...f, title, author, isIdentifying: false } : f
+          ));
+        } catch (e) {
+          setLibrary(prev => prev.map(f => f.id === file.id ? { ...f, isIdentifying: false } : f));
+          setQueue(prev => prev.map(f => f.id === file.id ? { ...f, isIdentifying: false } : f));
+        }
+      });
 
-    setLibrary(prev => [...prev, ...newFiles]);
-    
-    setQueue(prev => {
-      if (prev.length === 0) {
-        setTimeout(() => {
-          setCurrentIndex(0);
-          setIsPlaying(true);
-        }, 0);
-        return newFiles;
-      }
-      return prev;
-    });
-
-    // Run AI identification in background
-    newFiles.forEach(async (file) => {
-      try {
-        const { title, author } = await identifyMedia(file.name);
-        setLibrary(prev => prev.map(f => 
-          f.id === file.id ? { ...f, title, author, isIdentifying: false } : f
-        ));
-        setQueue(prev => prev.map(f => 
-          f.id === file.id ? { ...f, title, author, isIdentifying: false } : f
-        ));
-      } catch (e) {
-        setLibrary(prev => prev.map(f => f.id === file.id ? { ...f, isIdentifying: false } : f));
-        setQueue(prev => prev.map(f => f.id === file.id ? { ...f, isIdentifying: false } : f));
-      }
+      return [...currentLibrary, ...newFiles];
     });
   }, []);
 
@@ -299,6 +308,20 @@ export function usePlayer() {
       name,
       fileIds: []
     }]);
+  }, []);
+
+  const createOrUpdatePlaylist = useCallback((id: string | null, name: string, fileIds: string[]) => {
+    setPlaylists(prev => {
+      if (id) {
+        return prev.map(p => p.id === id ? { ...p, name, fileIds } : p);
+      } else {
+        return [...prev, {
+          id: Math.random().toString(36).substring(2, 9),
+          name,
+          fileIds
+        }];
+      }
+    });
   }, []);
 
   const addToPlaylist = useCallback((playlistId: string, fileId: string) => {
@@ -370,6 +393,7 @@ export function usePlayer() {
     addFiles,
     removeFile,
     createPlaylist,
+    createOrUpdatePlaylist,
     addToPlaylist,
     removeFromPlaylist,
     playTrack,

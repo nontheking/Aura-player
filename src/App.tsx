@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Upload, Settings, Youtube, FolderPlus } from 'lucide-react';
+import { Upload, Settings, Youtube, FolderPlus, PanelLeft } from 'lucide-react';
 import { usePlayer } from './hooks/usePlayer';
 import { PlayerControls } from './components/PlayerControls';
 import { TrackList } from './components/TrackList';
@@ -7,13 +7,21 @@ import { Visualizer } from './components/Visualizer';
 import { Sidebar } from './components/Sidebar';
 import { SettingsModal } from './components/SettingsModal';
 import { YoutubeDownloader } from './components/YoutubeDownloader';
-import { RepeatMode } from './types';
+import { PlaylistEditorModal } from './components/PlaylistEditorModal';
+import { SoundEnhancerModal } from './components/SoundEnhancerModal';
+import { useAudioEffects } from './hooks/useAudioEffects';
+import { RepeatMode, Playlist } from './types';
+import { SlidersHorizontal } from 'lucide-react';
 
 export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isYoutubeOpen, setIsYoutubeOpen] = useState(false);
+  const [isEnhancerOpen, setIsEnhancerOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isVisualizerOpen, setIsVisualizerOpen] = useState(true);
+  const [editingPlaylist, setEditingPlaylist] = useState<{ id: string | null, name: string, fileIds: string[] } | null>(null);
   
   const {
     library,
@@ -44,6 +52,7 @@ export default function App() {
     addFiles,
     removeFile,
     createPlaylist,
+    createOrUpdatePlaylist,
     addToPlaylist,
     removeFromPlaylist,
     playTrack,
@@ -51,6 +60,8 @@ export default function App() {
     handleLoadedMetadata,
     handleEnded
   } = usePlayer();
+
+  const { analyser, eq, setEq } = useAudioEffects(mediaRef, isPlaying);
 
   // Handle drag and drop
   const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -142,71 +153,114 @@ export default function App() {
       {/* Background Atmosphere */}
       <div className="atmosphere" />
 
-      <Sidebar 
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        playlists={playlists}
-        authors={authors}
-        onCreatePlaylist={createPlaylist}
-      />
+      <div className={`transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 ${isSidebarOpen ? 'w-64' : 'w-0'}`}>
+        <Sidebar 
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          playlists={playlists}
+          authors={authors}
+          onCreatePlaylist={() => setEditingPlaylist({ id: null, name: '', fileIds: [] })}
+        />
+      </div>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col relative z-10 overflow-hidden">
-        <header className="w-full p-6 flex items-center justify-end gap-3">
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileSelect}
-            className="hidden"
-            multiple
-            accept="audio/*,video/*"
-          />
-          <input
-            type="file"
-            ref={folderInputRef}
-            onChange={handleFileSelect}
-            className="hidden"
-            {...{ webkitdirectory: "true", directory: "true" } as any}
-          />
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 transition-colors border border-white/10"
-            title="Settings"
-          >
-            <Settings size={18} />
-          </button>
-          <button
-            onClick={() => setIsYoutubeOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-600/20 hover:bg-red-600/30 text-red-400 transition-colors text-sm font-medium border border-red-500/20"
-          >
-            <Youtube size={16} />
-            <span>YouTube</span>
-          </button>
-          <button
-            onClick={() => folderInputRef.current?.click()}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-sm font-medium border border-white/10"
-          >
-            <FolderPlus size={16} />
-            <span>Add Folder</span>
-          </button>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-sm font-medium border border-white/10"
-          >
-            <Upload size={16} />
-            <span>Add Files</span>
-          </button>
+        <header className="w-full p-6 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 transition-colors border border-white/10"
+              title="Toggle Sidebar"
+            >
+              <PanelLeft size={18} />
+            </button>
+            {typeof viewMode === 'object' && viewMode.type === 'playlist' && (
+              <button
+                onClick={() => {
+                  const pl = playlists.find(p => p.id === viewMode.id);
+                  if (pl) setEditingPlaylist({ id: pl.id, name: pl.name, fileIds: pl.fileIds });
+                }}
+                className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg font-medium transition-colors border border-white/10 text-sm"
+              >
+                Edit Playlist
+              </button>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileSelect}
+              className="hidden"
+              multiple
+              accept="audio/*,video/*"
+            />
+            <input
+              type="file"
+              ref={folderInputRef}
+              onChange={handleFileSelect}
+              className="hidden"
+              {...{ webkitdirectory: "true", directory: "true" } as any}
+            />
+            <button
+              onClick={() => setIsVisualizerOpen(!isVisualizerOpen)}
+              className={`flex items-center justify-center px-4 py-2 rounded-full transition-colors border text-sm font-medium ${
+                isVisualizerOpen 
+                  ? 'bg-white/10 hover:bg-white/20 border-white/10' 
+                  : 'bg-white/5 hover:bg-white/10 border-white/5 text-white/60'
+              }`}
+              title="Toggle Visualizer"
+            >
+              Visualizer
+            </button>
+            <button
+              onClick={() => setIsEnhancerOpen(true)}
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 transition-colors border border-white/10"
+              title="Sound Enhancer"
+            >
+              <SlidersHorizontal size={18} />
+            </button>
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 transition-colors border border-white/10"
+              title="Settings"
+            >
+              <Settings size={18} />
+            </button>
+            <button
+              onClick={() => setIsYoutubeOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-red-600/20 hover:bg-red-600/30 text-red-400 transition-colors text-sm font-medium border border-red-500/20"
+            >
+              <Youtube size={16} />
+              <span>YouTube</span>
+            </button>
+            <button
+              onClick={() => folderInputRef.current?.click()}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-sm font-medium border border-white/10"
+            >
+              <FolderPlus size={16} />
+              <span>Add Folder</span>
+            </button>
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-sm font-medium border border-white/10"
+            >
+              <Upload size={16} />
+              <span>Add Files</span>
+            </button>
+          </div>
         </header>
 
         <div className="flex-1 flex flex-col lg:flex-row w-full max-w-7xl mx-auto p-4 gap-6 overflow-hidden">
           
           {/* Left/Top: Visualizer & Now Playing */}
-          <div className="flex-[2] flex flex-col gap-6 min-h-[40vh] lg:min-h-0">
+          <div className={`transition-all duration-300 ease-in-out overflow-hidden flex flex-col gap-6 ${isVisualizerOpen ? 'flex-[2] min-h-[40vh] lg:min-h-0 opacity-100' : 'w-0 h-0 opacity-0 flex-none lg:w-0 lg:h-auto'}`}>
             <div className="flex-1 relative rounded-3xl overflow-hidden shadow-2xl shadow-black/50">
               <Visualizer 
                 mediaRef={mediaRef}
                 currentMedia={currentMedia}
                 isPlaying={isPlaying}
+                analyser={analyser}
               />
             </div>
 
@@ -218,34 +272,10 @@ export default function App() {
                 {currentMedia ? currentMedia.author : 'Drag & drop files to begin'}
               </p>
             </div>
-
-            <div className="mt-auto pb-4">
-              <PlayerControls
-                isPlaying={isPlaying}
-                currentTime={currentTime}
-                duration={duration}
-                volume={volume}
-                isMuted={isMuted}
-                repeatMode={repeatMode}
-                isShuffle={isShuffle}
-                onPlayPause={togglePlay}
-                onNext={playNext}
-                onPrev={playPrev}
-                onSeek={seek}
-                onVolumeChange={setVolume}
-                onToggleMute={() => setIsMuted(!isMuted)}
-                onToggleRepeat={() => {
-                  const modes: RepeatMode[] = ['none', 'all', 'one'];
-                  const nextMode = modes[(modes.indexOf(repeatMode) + 1) % modes.length];
-                  setRepeatMode(nextMode);
-                }}
-                onToggleShuffle={() => setIsShuffle(!isShuffle)}
-              />
-            </div>
           </div>
 
           {/* Right/Bottom: TrackList */}
-          <div className="flex-1 flex flex-col max-h-[50vh] lg:max-h-full">
+          <div className={`flex-1 flex flex-col transition-all duration-300 ${isVisualizerOpen ? 'max-h-[50vh] lg:max-h-full' : 'h-full'}`}>
             <TrackList
               files={currentViewFiles}
               currentMedia={currentMedia}
@@ -257,6 +287,31 @@ export default function App() {
           </div>
 
         </div>
+
+        {/* Player Controls - Always visible at the bottom */}
+        <div className="w-full max-w-7xl mx-auto p-4 pt-0 mt-auto">
+          <PlayerControls
+            isPlaying={isPlaying}
+            currentTime={currentTime}
+            duration={duration}
+            volume={volume}
+            isMuted={isMuted}
+            repeatMode={repeatMode}
+            isShuffle={isShuffle}
+            onPlayPause={togglePlay}
+            onNext={playNext}
+            onPrev={playPrev}
+            onSeek={seek}
+            onVolumeChange={setVolume}
+            onToggleMute={() => setIsMuted(!isMuted)}
+            onToggleRepeat={() => {
+              const modes: RepeatMode[] = ['none', 'all', 'one'];
+              const nextMode = modes[(modes.indexOf(repeatMode) + 1) % modes.length];
+              setRepeatMode(nextMode);
+            }}
+            onToggleShuffle={() => setIsShuffle(!isShuffle)}
+          />
+        </div>
       </main>
 
       <SettingsModal 
@@ -266,6 +321,22 @@ export default function App() {
       <YoutubeDownloader
         isOpen={isYoutubeOpen}
         onClose={() => setIsYoutubeOpen(false)}
+      />
+      <SoundEnhancerModal
+        isOpen={isEnhancerOpen}
+        onClose={() => setIsEnhancerOpen(false)}
+        eq={eq}
+        setEq={setEq}
+      />
+      <PlaylistEditorModal
+        isOpen={editingPlaylist !== null}
+        onClose={() => setEditingPlaylist(null)}
+        library={library}
+        initialName={editingPlaylist?.name || ''}
+        initialSelectedIds={editingPlaylist?.fileIds || []}
+        onSave={(name, fileIds) => {
+          createOrUpdatePlaylist(editingPlaylist?.id || null, name, fileIds);
+        }}
       />
     </div>
   );
