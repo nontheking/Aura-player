@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { get, set } from 'idb-keyval';
 import { MediaFile, RepeatMode, Playlist, ViewMode } from '../types';
 import { identifyMedia } from '../lib/ai';
 
@@ -6,6 +7,7 @@ export function usePlayer() {
   const [library, setLibrary] = useState<MediaFile[]>([]);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('library');
+  const [isLoaded, setIsLoaded] = useState(false);
   
   const [queue, setQueue] = useState<MediaFile[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(-1);
@@ -20,6 +22,48 @@ export function usePlayer() {
   const [shuffledIndices, setShuffledIndices] = useState<number[]>([]);
 
   const mediaRef = useRef<HTMLMediaElement | null>(null);
+
+  // Load from IndexedDB on mount
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const storedLibrary = await get<MediaFile[]>('aura_library');
+        const storedPlaylists = await get<Playlist[]>('aura_playlists');
+        
+        if (storedLibrary && Array.isArray(storedLibrary)) {
+          // Recreate URLs for the stored files
+          const loadedLibrary = storedLibrary.map(f => ({
+            ...f,
+            url: f.file ? URL.createObjectURL(f.file) : f.url
+          }));
+          setLibrary(loadedLibrary);
+        }
+        
+        if (storedPlaylists && Array.isArray(storedPlaylists)) {
+          setPlaylists(storedPlaylists);
+        }
+      } catch (err) {
+        console.error("Failed to load data from IndexedDB:", err);
+      } finally {
+        setIsLoaded(true);
+      }
+    }
+    loadData();
+  }, []);
+
+  // Save to IndexedDB when library changes
+  useEffect(() => {
+    if (!isLoaded) return;
+    // We don't need to save the `url` as it's session specific
+    const libraryToSave = library.map(f => ({ ...f, url: '' }));
+    set('aura_library', libraryToSave).catch(err => console.error("Failed to save library:", err));
+  }, [library, isLoaded]);
+
+  // Save to IndexedDB when playlists change
+  useEffect(() => {
+    if (!isLoaded) return;
+    set('aura_playlists', playlists).catch(err => console.error("Failed to save playlists:", err));
+  }, [playlists, isLoaded]);
 
   const currentMedia = currentIndex >= 0 && currentIndex < queue.length ? queue[currentIndex] : null;
 
@@ -168,18 +212,27 @@ export function usePlayer() {
   }, [repeatMode, play, playNext]);
 
   const addFiles = useCallback((files: FileList | File[]) => {
+    const validExtensions = ['.mp3', '.wav', '.ogg', '.flac', '.m4a', '.aac', '.mp4', '.webm', '.mkv'];
+    
     const newFiles: MediaFile[] = Array.from(files)
-      .filter(f => f.type.startsWith('audio/') || f.type.startsWith('video/'))
-      .map(file => ({
-        id: Math.random().toString(36).substring(2, 9),
-        name: file.name,
-        url: URL.createObjectURL(file),
-        type: file.type.startsWith('video/') ? 'video' : 'audio',
-        file,
-        title: file.name.replace(/\.[^/.]+$/, ""),
-        author: "Unknown",
-        isIdentifying: true
-      }));
+      .filter(f => {
+        if (f.type.startsWith('audio/') || f.type.startsWith('video/')) return true;
+        const ext = f.name.toLowerCase().substring(f.name.lastIndexOf('.'));
+        return validExtensions.includes(ext);
+      })
+      .map(file => {
+        const isVideo = file.type.startsWith('video/') || ['.mp4', '.webm', '.mkv'].some(ext => file.name.toLowerCase().endsWith(ext));
+        return {
+          id: Math.random().toString(36).substring(2, 9),
+          name: file.name,
+          url: URL.createObjectURL(file),
+          type: isVideo ? 'video' : 'audio',
+          file,
+          title: file.name.replace(/\.[^/.]+$/, ""),
+          author: "Unknown",
+          isIdentifying: true
+        };
+      });
 
     if (newFiles.length === 0) return;
 

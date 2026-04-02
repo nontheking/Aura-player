@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Upload, Settings, Youtube } from 'lucide-react';
+import { Upload, Settings, Youtube, FolderPlus } from 'lucide-react';
 import { usePlayer } from './hooks/usePlayer';
 import { PlayerControls } from './components/PlayerControls';
 import { TrackList } from './components/TrackList';
@@ -11,6 +11,7 @@ import { RepeatMode } from './types';
 
 export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const folderInputRef = useRef<HTMLInputElement>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isYoutubeOpen, setIsYoutubeOpen] = useState(false);
   
@@ -71,6 +72,9 @@ export default function App() {
     }
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+    if (folderInputRef.current) {
+      folderInputRef.current.value = '';
     }
   }, [addFiles]);
 
@@ -157,6 +161,13 @@ export default function App() {
             multiple
             accept="audio/*,video/*"
           />
+          <input
+            type="file"
+            ref={folderInputRef}
+            onChange={handleFileSelect}
+            className="hidden"
+            {...{ webkitdirectory: "true", directory: "true" } as any}
+          />
           <button
             onClick={() => setIsSettingsOpen(true)}
             className="flex items-center justify-center w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 transition-colors border border-white/10"
@@ -172,11 +183,18 @@ export default function App() {
             <span>YouTube</span>
           </button>
           <button
+            onClick={() => folderInputRef.current?.click()}
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-sm font-medium border border-white/10"
+          >
+            <FolderPlus size={16} />
+            <span>Add Folder</span>
+          </button>
+          <button
             onClick={() => fileInputRef.current?.click()}
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-sm font-medium border border-white/10"
           >
             <Upload size={16} />
-            <span>Add Media</span>
+            <span>Add Files</span>
           </button>
         </header>
 
