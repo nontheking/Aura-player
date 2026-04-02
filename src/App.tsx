@@ -56,6 +56,7 @@ export default function App() {
     addToPlaylist,
     removeFromPlaylist,
     playTrack,
+    loadSample,
     handleTimeUpdate,
     handleLoadedMetadata,
     handleEnded
@@ -283,6 +284,7 @@ export default function App() {
               onPlay={playTrack}
               onRemove={removeFile}
               onAddToPlaylist={addToPlaylist}
+              onLoadSample={loadSample}
             />
           </div>
 

@@ -349,6 +349,17 @@ export function usePlayer() {
     setIsPlaying(true);
   }, [currentViewFiles]);
 
+  const loadSample = useCallback(async () => {
+    try {
+      const response = await fetch('https://archive.org/download/tvtunes_26709/Crazy%20Frog%20-%20Axel%20F.mp3');
+      const blob = await response.blob();
+      const file = new File([blob], 'Crazy Frog - Axel F.mp3', { type: 'audio/mpeg' });
+      addFiles([file]);
+    } catch (err) {
+      console.error("Failed to load sample:", err);
+    }
+  }, [addFiles]);
+
   // Handle volume changes
   useEffect(() => {
     if (mediaRef.current) {
@@ -397,6 +408,7 @@ export function usePlayer() {
     addToPlaylist,
     removeFromPlaylist,
     playTrack,
+    loadSample,
     handleTimeUpdate,
     handleLoadedMetadata,
     handleEnded

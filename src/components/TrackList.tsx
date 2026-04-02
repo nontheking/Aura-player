@@ -10,9 +10,10 @@ interface TrackListProps {
   onPlay: (id: string) => void;
   onRemove: (id: string) => void;
   onAddToPlaylist: (playlistId: string, fileId: string) => void;
+  onLoadSample?: () => void;
 }
 
-export function TrackList({ files, currentMedia, playlists, onPlay, onRemove, onAddToPlaylist }: TrackListProps) {
+export function TrackList({ files, currentMedia, playlists, onPlay, onRemove, onAddToPlaylist, onLoadSample }: TrackListProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const toggleSelection = (e: React.MouseEvent, id: string) => {
@@ -49,7 +50,16 @@ export function TrackList({ files, currentMedia, playlists, onPlay, onRemove, on
       <div className="flex-1 flex flex-col items-center justify-center text-white/40 p-8 text-center border border-dashed border-white/10 rounded-2xl m-4">
         <Music size={48} className="mb-4 opacity-50" />
         <p>No media found</p>
-        <p className="text-sm mt-2">Drag and drop files to add them to your library</p>
+        <p className="text-sm mt-2 mb-6">Drag and drop files to add them to your library</p>
+        {onLoadSample && (
+          <button
+            onClick={onLoadSample}
+            className="px-6 py-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors text-sm font-medium border border-white/10 flex items-center gap-2"
+          >
+            <Play size={16} />
+            Load Sample Song (Axel F)
+          </button>
+        )}
       </div>
     );
   }
