@@ -105,9 +105,14 @@ export function usePlayer() {
       try {
         await mediaRef.current.play();
         setIsPlaying(true);
-      } catch (err) {
-        console.error("Playback failed:", err);
-        setIsPlaying(false);
+      } catch (err: any) {
+        if (err.name === 'AbortError') {
+          // Ignore abort errors caused by src changes or rapid track switching
+          console.log("Playback interrupted (likely due to track change)");
+        } else {
+          console.error("Playback failed:", err);
+          setIsPlaying(false);
+        }
       }
     }
   }, []);
@@ -240,8 +245,10 @@ export function usePlayer() {
     
     setQueue(prev => {
       if (prev.length === 0) {
-        setCurrentIndex(0);
-        setTimeout(() => setIsPlaying(true), 100);
+        setTimeout(() => {
+          setCurrentIndex(0);
+          setIsPlaying(true);
+        }, 0);
         return newFiles;
       }
       return prev;
@@ -316,7 +323,7 @@ export function usePlayer() {
     setQueue(currentViewFiles);
     const idx = currentViewFiles.findIndex(f => f.id === fileId);
     setCurrentIndex(idx !== -1 ? idx : 0);
-    setTimeout(() => setIsPlaying(true), 50);
+    setIsPlaying(true);
   }, [currentViewFiles]);
 
   // Handle volume changes

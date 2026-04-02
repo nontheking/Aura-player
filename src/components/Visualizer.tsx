@@ -116,33 +116,20 @@ export function Visualizer({ mediaRef, currentMedia, isPlaying }: VisualizerProp
 
   return (
     <div className="relative w-full h-full flex items-center justify-center overflow-hidden bg-black/20 rounded-2xl glass-panel">
-      {/* Video Element (hidden if audio) */}
-      {isVideo && (
-        <video
-          ref={mediaRef as React.RefObject<HTMLVideoElement>}
-          src={currentMedia.url}
-          className="w-full h-full object-contain z-10"
-          controls={false}
-          playsInline
-        />
-      )}
+      {/* Single Media Element for both Audio and Video */}
+      <video
+        ref={mediaRef as React.RefObject<HTMLVideoElement>}
+        src={currentMedia?.url}
+        className={`w-full h-full object-contain z-10 ${isVideo ? '' : 'hidden'}`}
+        controls={false}
+        playsInline
+      />
 
-      {/* Audio Element (hidden) */}
-      {!isVideo && (
-        <audio
-          ref={mediaRef as React.RefObject<HTMLAudioElement>}
-          src={currentMedia?.url}
-          className="hidden"
-        />
-      )}
-
-      {/* Visualizer Canvas (only show for audio or when no media) */}
-      {!isVideo && (
-        <canvas
-          ref={canvasRef}
-          className="absolute inset-0 w-full h-full z-0 opacity-80"
-        />
-      )}
+      {/* Visualizer Canvas (hidden for video) */}
+      <canvas
+        ref={canvasRef}
+        className={`absolute inset-0 w-full h-full z-0 opacity-80 ${isVideo ? 'hidden' : ''}`}
+      />
 
       {/* Placeholder when empty */}
       {!currentMedia && (
