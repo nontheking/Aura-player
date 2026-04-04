@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { get, set } from 'idb-keyval';
 import { MediaFile, RepeatMode, Playlist, ViewMode } from '../types';
-import { identifyMedia } from '../lib/ai';
+import { identifyMediaBatch } from '../lib/ai';
+import { readMediaTags } from '../lib/mediaTags';
 
 export function usePlayer() {
   const [library, setLibrary] = useState<MediaFile[]>([]);
@@ -260,21 +261,65 @@ export function usePlayer() {
         return prev;
       });
 
-      // Run AI identification in background
-      newFiles.forEach(async (file) => {
-        try {
-          const { title, author, album, genre } = await identifyMedia(file.name);
-          setLibrary(prev => prev.map(f => 
-            f.id === file.id ? { ...f, title, author, album, genre, isIdentifying: false } : f
-          ));
-          setQueue(prev => prev.map(f => 
-            f.id === file.id ? { ...f, title, author, album, genre, isIdentifying: false } : f
-          ));
-        } catch (e) {
-          setLibrary(prev => prev.map(f => f.id === file.id ? { ...f, isIdentifying: false } : f));
-          setQueue(prev => prev.map(f => f.id === file.id ? { ...f, isIdentifying: false } : f));
+      // Run identification in background
+      const processFiles = async () => {
+        const aiFilesToIdentify: { file: MediaFile, index: number }[] = [];
+
+        // First, try to read ID3 tags locally
+        for (let i = 0; i < newFiles.length; i++) {
+          const file = newFiles[i];
+          if (file.file) {
+            const tags = await readMediaTags(file.file);
+            if (tags) {
+              // Update state with local tags
+              setLibrary(prev => prev.map(f => 
+                f.id === file.id ? { ...f, ...tags, isIdentifying: false } : f
+              ));
+              setQueue(prev => prev.map(f => 
+                f.id === file.id ? { ...f, ...tags, isIdentifying: false } : f
+              ));
+            } else {
+              aiFilesToIdentify.push({ file, index: i });
+            }
+          } else {
+            aiFilesToIdentify.push({ file, index: i });
+          }
         }
-      });
+
+        // Then, use AI for files that didn't have tags
+        if (aiFilesToIdentify.length > 0) {
+          try {
+            const results = await identifyMediaBatch(aiFilesToIdentify.map(item => item.file.name));
+            setLibrary(prev => prev.map(f => {
+              const aiItem = aiFilesToIdentify.find(item => item.file.id === f.id);
+              if (aiItem) {
+                const resultIndex = aiFilesToIdentify.indexOf(aiItem);
+                if (results[resultIndex]) {
+                  return { ...f, ...results[resultIndex], isIdentifying: false };
+                }
+                return { ...f, isIdentifying: false };
+              }
+              return f;
+            }));
+            setQueue(prev => prev.map(f => {
+              const aiItem = aiFilesToIdentify.find(item => item.file.id === f.id);
+              if (aiItem) {
+                const resultIndex = aiFilesToIdentify.indexOf(aiItem);
+                if (results[resultIndex]) {
+                  return { ...f, ...results[resultIndex], isIdentifying: false };
+                }
+                return { ...f, isIdentifying: false };
+              }
+              return f;
+            }));
+          } catch (e) {
+            setLibrary(prev => prev.map(f => aiFilesToIdentify.find(item => item.file.id === f.id) ? { ...f, isIdentifying: false } : f));
+            setQueue(prev => prev.map(f => aiFilesToIdentify.find(item => item.file.id === f.id) ? { ...f, isIdentifying: false } : f));
+          }
+        }
+      };
+
+      processFiles();
 
       return [...currentLibrary, ...newFiles];
     });

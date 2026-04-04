@@ -282,9 +282,27 @@ export default function App() {
               <h2 className="text-2xl md:text-3xl font-bold truncate tracking-tight">
                 {currentMedia ? (currentMedia.title || currentMedia.name) : 'No Media Selected'}
               </h2>
-              <p className="text-[var(--color-accent)] text-sm mt-1 uppercase tracking-widest font-medium">
+              <p className="text-[var(--color-accent)] text-sm mt-1 uppercase tracking-widest font-medium mb-4">
                 {currentMedia ? currentMedia.author : 'Drag & drop files to begin'}
               </p>
+              {!currentMedia && (
+                <div className="flex items-center justify-center lg:justify-start gap-3">
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-violet-600 hover:bg-violet-500 text-white transition-colors text-sm font-medium shadow-lg shadow-violet-500/20"
+                  >
+                    <Upload size={16} />
+                    <span>Select Files</span>
+                  </button>
+                  <button
+                    onClick={() => folderInputRef.current?.click()}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors text-sm font-medium border border-white/10"
+                  >
+                    <FolderPlus size={16} />
+                    <span>Select Folder</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
