@@ -28,7 +28,10 @@ jobs:
       - name: Initialize Tauri
         run: npx -y @tauri-apps/cli@1 init --ci --app-name aura-player --window-title "Aura Player" --dist-dir ../dist --dev-path http://localhost:3000
       - name: Generate Tauri Icons
-        run: npx -y @tauri-apps/cli@1 icon public/icon.svg
+        run: |
+          npm install --no-save sharp
+          node -e "require('sharp')('public/icon.svg').resize(1024, 1024).png().toFile('public/icon.png').catch(err => { console.error(err); process.exit(1); })"
+          npx -y @tauri-apps/cli@1 icon public/icon.png
       - name: Configure Tauri Permissions and Bundle ID
         run: |
           cd src-tauri
