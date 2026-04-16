@@ -1,8 +1,36 @@
+# --- Dependencies & Build ---
 node_modules/
-build/
 dist/
+build/
 coverage/
-.DS_Store
-*.log
-.env*
+
+# --- Environment & Secrets ---
+# Ignore all env files that might contain your real API keys
+.env
+.env.local
+.env.*.local
+# But DO allow the template file to be uploaded
 !.env.example
+
+# --- Project Specifics ---
+# Ignore the local metadata/settings files so users can create their own
+metadata.json
+settings.json
+*.db
+
+# --- Media & Downloads ---
+# Ignore the music/video files you downloaded during testing
+# If your folder name is different, change 'downloads/' to match it
+downloads/
+temp/
+*.mp3
+*.mp4
+*.m4a
+*.mkv
+
+# --- OS & IDE Files ---
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
