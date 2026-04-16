@@ -394,6 +394,11 @@ export function usePlayer() {
     setIsPlaying(true);
   }, [currentViewFiles]);
 
+  const updateMediaFile = useCallback((fileId: string, updates: Partial<MediaFile>) => {
+    setLibrary(prev => prev.map(f => (f.id === fileId ? { ...f, ...updates } : f)));
+    setQueue(prev => prev.map(f => (f.id === fileId ? { ...f, ...updates } : f)));
+  }, []);
+
   // Handle volume changes
   useEffect(() => {
     if (mediaRef.current) {
@@ -442,6 +447,7 @@ export function usePlayer() {
     addToPlaylist,
     removeFromPlaylist,
     playTrack,
+    updateMediaFile,
     handleTimeUpdate,
     handleLoadedMetadata,
     handleEnded

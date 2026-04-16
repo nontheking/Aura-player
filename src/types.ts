@@ -1,3 +1,5 @@
+import { LyricsData } from './lib/lyrics';
+
 export interface MediaFile {
   id: string;
   name: string;
@@ -10,6 +12,8 @@ export interface MediaFile {
   album?: string;
   genre?: string;
   isIdentifying?: boolean;
+  lyrics?: LyricsData | null;
+  lyricsOffset?: number;
 }
 
 export interface Playlist {

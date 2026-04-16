@@ -70,19 +70,22 @@ export function Visualizer({ mediaRef, currentMedia, isPlaying, analyser }: Visu
 
   // Handle canvas resize
   useEffect(() => {
-    const handleResize = () => {
-      if (canvasRef.current) {
-        const parent = canvasRef.current.parentElement;
-        if (parent) {
+    let resizeObserver: ResizeObserver | null = null;
+    
+    if (canvasRef.current && canvasRef.current.parentElement) {
+      const parent = canvasRef.current.parentElement;
+      resizeObserver = new ResizeObserver(() => {
+        if (canvasRef.current) {
           canvasRef.current.width = parent.clientWidth;
           canvasRef.current.height = parent.clientHeight;
         }
-      }
-    };
+      });
+      resizeObserver.observe(parent);
+    }
 
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      if (resizeObserver) resizeObserver.disconnect();
+    };
   }, []);
 
   const isVideo = currentMedia?.type === 'video';

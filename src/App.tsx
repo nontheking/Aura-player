@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Upload, Settings, Youtube, FolderPlus, PanelLeft, Info } from 'lucide-react';
+import { Upload, Settings, Youtube, FolderPlus, PanelLeft, Info, Mic2 } from 'lucide-react';
 import { usePlayer } from './hooks/usePlayer';
 import { PlayerControls } from './components/PlayerControls';
 import { TrackList } from './components/TrackList';
 import { Visualizer } from './components/Visualizer';
+import { LyricsPanel } from './components/LyricsPanel';
 import { Sidebar } from './components/Sidebar';
 import { SettingsModal } from './components/SettingsModal';
 import { YoutubeDownloader } from './components/YoutubeDownloader';
@@ -21,7 +22,7 @@ export default function App() {
   const [isYoutubeOpen, setIsYoutubeOpen] = useState(false);
   const [isEnhancerOpen, setIsEnhancerOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isVisualizerOpen, setIsVisualizerOpen] = useState(true);
+  const [leftPanel, setLeftPanel] = useState<'hidden' | 'visualizer' | 'lyrics'>('visualizer');
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [editingPlaylist, setEditingPlaylist] = useState<{ id: string | null, name: string, fileIds: string[] } | null>(null);
   
@@ -58,6 +59,7 @@ export default function App() {
     addToPlaylist,
     removeFromPlaylist,
     playTrack,
+    updateMediaFile,
     handleTimeUpdate,
     handleLoadedMetadata,
     handleEnded
@@ -205,15 +207,27 @@ export default function App() {
               {...{ webkitdirectory: "true", directory: "true" } as any}
             />
             <button
-              onClick={() => setIsVisualizerOpen(!isVisualizerOpen)}
+              onClick={() => setLeftPanel(prev => prev === 'visualizer' ? 'hidden' : 'visualizer')}
               className={`flex items-center justify-center px-4 py-2 rounded-full transition-colors border text-sm font-medium ${
-                isVisualizerOpen 
+                leftPanel === 'visualizer' 
                   ? 'bg-white/10 hover:bg-white/20 border-white/10' 
                   : 'bg-white/5 hover:bg-white/10 border-white/5 text-white/60'
               }`}
               title="Toggle Visualizer"
             >
               Visualizer
+            </button>
+            <button
+              onClick={() => setLeftPanel(prev => prev === 'lyrics' ? 'hidden' : 'lyrics')}
+              className={`flex items-center justify-center px-4 py-2 rounded-full transition-colors border text-sm font-medium ${
+                leftPanel === 'lyrics' 
+                  ? 'bg-white/10 hover:bg-white/20 border-white/10' 
+                  : 'bg-white/5 hover:bg-white/10 border-white/5 text-white/60'
+              }`}
+              title="Toggle Lyrics"
+            >
+              <Mic2 size={16} className="mr-2" />
+              Lyrics
             </button>
             <button
               onClick={() => setIsInfoOpen(!isInfoOpen)}
@@ -266,9 +280,10 @@ export default function App() {
 
         <div className="flex-1 flex flex-col lg:flex-row w-full max-w-7xl mx-auto p-4 gap-6 overflow-hidden">
           
-          {/* Left/Top: Visualizer & Now Playing */}
-          <div className={`transition-all duration-300 ease-in-out overflow-hidden flex flex-col gap-6 ${isVisualizerOpen ? 'flex-[2] min-h-[40vh] lg:min-h-0 opacity-100' : 'w-0 h-0 opacity-0 flex-none lg:w-0 lg:h-auto'}`}>
-            <div className="flex-1 relative rounded-3xl overflow-hidden shadow-2xl shadow-black/50">
+          {/* Left/Top: Visualizer/Lyrics & Now Playing */}
+          <div className={`transition-all duration-300 ease-in-out overflow-hidden flex flex-col gap-6 ${leftPanel !== 'hidden' ? 'flex-[2] min-h-[40vh] lg:min-h-0 opacity-100' : 'w-0 h-0 opacity-0 flex-none lg:w-0 lg:h-auto'}`}>
+            
+            <div className={`flex-1 relative rounded-3xl overflow-hidden shadow-2xl shadow-black/50 ${leftPanel === 'visualizer' ? 'flex' : 'hidden'}`}>
               <Visualizer 
                 mediaRef={mediaRef}
                 currentMedia={currentMedia}
@@ -276,6 +291,16 @@ export default function App() {
                 analyser={analyser}
               />
             </div>
+
+            {leftPanel === 'lyrics' && (
+              <div className="flex-1 relative rounded-3xl overflow-hidden shadow-2xl shadow-black/50 flex flex-col">
+                <LyricsPanel 
+                  currentMedia={currentMedia}
+                  currentTime={currentTime}
+                  updateMediaFile={updateMediaFile}
+                />
+              </div>
+            )}
 
             <div className="px-4 text-center lg:text-left">
               <h2 className="text-2xl md:text-3xl font-bold truncate tracking-tight">
@@ -306,7 +331,7 @@ export default function App() {
           </div>
 
           {/* Right/Bottom: TrackList */}
-          <div className={`flex-1 flex flex-col transition-all duration-300 ${isVisualizerOpen ? 'max-h-[50vh] lg:max-h-full' : 'h-full'}`}>
+          <div className={`flex-1 flex flex-col transition-all duration-300 ${leftPanel !== 'hidden' ? 'max-h-[50vh] lg:max-h-full' : 'h-full'}`}>
             <TrackList
               files={currentViewFiles}
               currentMedia={currentMedia}
