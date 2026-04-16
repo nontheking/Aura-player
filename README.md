@@ -1,20 +1,48 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Aura Player
 
-# Run and deploy your AI Studio app
+Aura player is a  dedicated app to play music and audio files. 
 
-This contains everything you need to run your app locally.
+# Features
 
-View your app in AI Studio: https://ai.studio/apps/d3a4c1f2-e6bd-4b51-b9aa-3b0afa7be500
+- **Audio-Centric Video Playback:** Import MP4, MKV, and MOV files to listen to their audio tracks in a lightweight environment.
+- **Hybrid Import Engine:** Supports both granular file selection and bulk folder loading.
+- **Custom playlist creation**: Build personalized collections.
+- **AI-powered metadata enrichmen**t: Integrates with **Google AI Studio(https://aistudio.google.com/api-keys)** API to identify and retrieve information about music and video files.
+- **Integrated 3-Band Equalizer:** Fine-tune your listening experience with dedicated controls for **Bass**, **Mid**, and **Treble**.
+- **One-Click YT-to-Audio:** Fast extraction from YouTube links.
 
-## Run Locally
+# Configuration Setup
 
-**Prerequisites:**  Node.js
+Customize the app in the **Settings** menu:
 
+- **Gemini AI Integration:** Enter the API key in the **Gemini API Key** field to enable automated creator sorting and metadata retrieval.
+- **Download Directory:** Use the **Browse** button to choose the save location. All YouTube downloads will go to this folder.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+# Getting Started
+
+**1\. Initial Setup (Required)**
+
+To enable the **AI-powered sorting** and metadata features, you must configure your API key:
+
+- Click the **Settings** ⚙️ button in the main menu.
+- Locate the **Gemini API Key** field.
+- Paste your key from Google AI Studio.
+- *This allows the app to automatically identify and categorize your music by creator.*
+
+**2\. Building Your Library**
+
+You can populate your playlist in two ways:
+
+- **Add Individual Files:** Use the **"Add Files"** button to hand-pick specific tracks.
+- **Multi-File Batch Import:** Click **"Add Folder"** to instantly import every supported audio and video file from a specific directory.
+
+**3\. YouTube Integration**
+
+Download audio directly from YouTube to your local machine:
+
+1.  **Set Your Path:** Go to **Settings** and use the **Browse** button to set your preferred **Download Directory**.
+2.  **Download:** Click the **YouTube** button and paste the video URL.
+3.  **Retrieve:** Once the download is complete, the file will be waiting in your chosen folder.
+4.  **Import:** Use the **Add Files** button to bring your new download into the app's active playlist
+
+* * *
