@@ -1,6 +1,6 @@
 # Aura Player
 
-Aura player is a  dedicated app to play music and audio files. 
+Aura Player is a multimedia application designed for an audio-first experience. It allows users to manage media libraries, enhance sound quality with a built-in equalizer, and use Gemini AI to organize collections automatically.
 
 # Features
 
