@@ -1,3 +1,4 @@
+import React from 'react';
 import { useEffect, useRef, useState } from 'react';
 
 export function useAudioEffects(mediaRef: React.RefObject<HTMLMediaElement | null>, isPlaying: boolean) {
