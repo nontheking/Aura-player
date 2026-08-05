@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Key, Server, Folder } from 'lucide-react';
+import { X, Key, Server, Folder, Music2 } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -10,6 +10,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [apiKey, setApiKey] = useState('');
   const [backendUrl, setBackendUrl] = useState('');
   const [downloadDir, setDownloadDir] = useState('');
+  const [lastFmApiKey, setLastFmApiKey] = useState('');
   const isTauri = '__TAURI__' in window;
 
   useEffect(() => {
@@ -17,6 +18,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setApiKey(localStorage.getItem('GEMINI_API_KEY') || '');
       setBackendUrl(localStorage.getItem('BACKEND_URL') || '');
       setDownloadDir(localStorage.getItem('DOWNLOAD_DIR') || '');
+      setLastFmApiKey(localStorage.getItem('LASTFM_API_KEY') || '');
     }
   }, [isOpen]);
 
@@ -27,6 +29,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     localStorage.setItem('GEMINI_API_KEY', apiKey.trim());
     localStorage.setItem('BACKEND_URL', backendUrl.trim().replace(/\/$/, '')); // Remove trailing slash
     localStorage.setItem('DOWNLOAD_DIR', downloadDir.trim());
+    localStorage.setItem('LASTFM_API_KEY', lastFmApiKey.trim());
     onClose();
   };
 
@@ -76,6 +79,26 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             />
             <p className="text-xs text-white/40 mt-2">
               Required for automatic song title and artist identification. Your key is stored locally on your device.
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-white/70 mb-2 flex items-center gap-2">
+              <Music2 size={14} />
+              Last.fm API Key (Optional)
+            </label>
+            <input
+              type="password"
+              value={lastFmApiKey}
+              onChange={(e) => setLastFmApiKey(e.target.value)}
+              placeholder="Get free key at last.fm/api/account/create"
+              className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-2 text-white outline-none focus:border-[var(--color-accent)] transition-colors"
+            />
+            <p className="text-xs text-white/40 mt-2">
+              Get enriched metadata including album art, artist bios, genres, and similar artists. Free API key from{" "}
+              <a href="https://www.last.fm/api/account/create" target="_blank" rel="noopener noreferrer" className="text-red-400 hover:underline">
+                last.fm/api
+              </a>
             </p>
           </div>
 
